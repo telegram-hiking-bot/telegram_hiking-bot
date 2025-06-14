@@ -5,10 +5,29 @@ import pytz
 
 app = Flask(__name__)
 
-# Telegram Bot Token
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+# Replace with your actual Telegram bot token
+BOT_TOKEN = "7975572544:AAHeTn1bCV3EGe2lIP0FOtmO8TTSJKsEPtY"
 
-# Function to fetch calendar busy times
+# Replace with your actual OAuth 2.0 values
+CLIENT_ID = "327270170022-8ie6e374rssrgdjh3osru3u2f94trsek.apps.googleusercontent.com"
+CLIENT_SECRET = "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"
+REFRESH_TOKEN = "1//04GhZEvsvunOICgYIARAAGAQSNwF-L9Irvp6-RSqWYWp7nMcNfjS6ckL8lJ8QDe1LygiepuW6CbIyIdmLz3ibENULuZoL0yTtBAo"
+
+def get_access_token():
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "refresh_token": REFRESH_TOKEN,
+        "grant_type": "refresh_token"
+    }
+    response = requests.post(token_url, data=data)
+    if response.status_code == 200:
+        return response.json()["access_token"]
+    else:
+        print("Failed to refresh access token:", response.text)
+        return None
+
 def get_busy_times(access_token):
     url = "https://www.googleapis.com/calendar/v3/freeBusy"
     headers = {
@@ -31,18 +50,15 @@ def get_busy_times(access_token):
     response = requests.post(url, headers=headers, json=data)
 
     if response.status_code == 200:
-        busy_times = response.json()["calendars"]["primary"]["busy"]
-        return busy_times
+        return response.json()["calendars"]["primary"]["busy"]
     else:
         print("Error fetching calendar:", response.text)
         return []
 
-# Root GET route for testing
 @app.route("/", methods=["GET"])
 def index():
-    return "Hello, this is the Hiking Bot webhook server."
+    return "Hiking Bot Webhook is running."
 
-# Telegram webhook route
 @app.route("/", methods=["POST"])
 def webhook():
     data = request.get_json()
@@ -51,18 +67,17 @@ def webhook():
         text = data["message"]["text"].lower()
 
         if "availability" in text:
-            # Paste your current access token below (from OAuth Playground)
-            access_token = "YOUR_ACCESS_TOKEN_HERE"
-            busy_times = get_busy_times(access_token)
-
-            if busy_times:
-                reply = "You're busy at these times:\n"
-                for slot in busy_times:
-                    start = slot["start"]
-                    end = slot["end"]
-                    reply += f"- {start} to {end}\n"
+            access_token = get_access_token()
+            if not access_token:
+                reply = "Failed to authenticate with Google Calendar."
             else:
-                reply = "You're fully available for the next 3 days between 6am and 6pm!"
+                busy_times = get_busy_times(access_token)
+                if busy_times:
+                    reply = "You're busy at these times:\n"
+                    for slot in busy_times:
+                        reply += f"- {slot['start']} to {slot['end']}\n"
+                else:
+                    reply = "You're fully available for the next 3 days between 6am and 6pm!"
         else:
             reply = f"You said: {text}"
 
@@ -70,4 +85,6 @@ def webhook():
             f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
             json={"chat_id": chat_id, "text": reply}
         )
+
     return "OK"
+
