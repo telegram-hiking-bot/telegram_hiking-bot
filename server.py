@@ -66,19 +66,18 @@ def webhook():
         chat_id = data["message"]["chat"]["id"]
         text = data["message"]["text"].strip().lower()
 
-
-if "availability" in text:
-    access_token = get_access_token()
-    if not access_token:
-        reply = "Failed to authenticate with Google Calendar."
-    else:
-        busy_times = get_busy_times(access_token)
-        if busy_times:
-            reply = "You're busy at these times:\n"
-            for slot in busy_times:
-                reply += f"- {slot['start']} to {slot['end']}\n"
-        else:
-            reply = "You're fully available for the next 3 days between 6am and 6pm!"
+        if "availability" in text:
+            access_token = get_access_token()
+            if not access_token:
+                reply = "Failed to authenticate with Google Calendar."
+            else:
+                busy_times = get_busy_times(access_token)
+                if busy_times:
+                    reply = "You're busy at these times:\n"
+                    for slot in busy_times:
+                        reply += f"- {slot['start']} to {slot['end']}\n"
+                else:
+                    reply = "You're fully available for the next 3 days between 6am and 6pm!"
         else:
             reply = f"You said: {text}"
 
@@ -88,4 +87,3 @@ if "availability" in text:
         )
 
     return "OK"
-
