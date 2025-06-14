@@ -64,7 +64,8 @@ def webhook():
     data = request.get_json()
     if "message" in data and data["message"].get("text"):
         chat_id = data["message"]["chat"]["id"]
-        text = data["message"]["text"].lower()
+        text = data["message"]["text"].strip().lower()
+
 
 if "availability" in text:
     access_token = get_access_token()
