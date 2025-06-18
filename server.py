@@ -2,6 +2,7 @@ from flask import Flask, request
 import requests
 import datetime
 import pytz
+from weather import get_weather  # ✅ NEW IMPORT
 
 app = Flask(__name__)
 
@@ -78,6 +79,12 @@ def webhook():
                         reply += f"- {slot['start']} to {slot['end']}\n"
                 else:
                     reply = "You're fully available for the next 3 days between 6am and 6pm!"
+
+        elif "weather" in text:  # ✅ NEW BLOCK
+            city = "São José dos Campos"
+            api_key = "ae51aaa17bd3f521d112965df4761828"
+            reply = get_weather(city, api_key)
+
         else:
             reply = f"You said: {text}"
 
